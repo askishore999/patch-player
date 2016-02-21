@@ -103,7 +103,12 @@ public class HostServerResource extends ServerResource {
             String url = String.format(LISTEN_URL, listenerClient);
             ClientResource client = new ClientResource(url);
             client.setQueryValue("audio_name", audioName);
-            client.setQueryValue("audio_channel", listenerChannelClient.getKey());
+
+            String position =
+                    listenerChannelClient.getKey().substring(listenerChannelClient.getKey().lastIndexOf("_") + 1,
+                            listenerChannelClient.getKey().lastIndexOf(".mp3"));
+
+            client.setQueryValue("audio_channel", position);
             client.setQueryValue("audio_delay", "0");
             Thread th = new Thread(new RunnablePlay(client));
             th.start();

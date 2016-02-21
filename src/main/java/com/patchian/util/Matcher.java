@@ -2,7 +2,6 @@ package com.patchian.util;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +15,11 @@ public class Matcher {
 
         List<String> tempListIps = new ArrayList<String>(listListener);
 
-        List<File> listChannels = Arrays.asList(channels);
+        List<File> listChannels = new ArrayList<File>();
+
+        for (File channel : channels) {
+            listChannels.add(channel);
+        }
 
         for (File channel : channels) {
             String position = getPosition(channel.getName());
@@ -26,8 +29,10 @@ public class Matcher {
 
             if (ipAddress != null && !ipAddress.isEmpty()) {
                 System.out.println("Adding: " + listMap.get(position) + " to channel: " + channel.getAbsolutePath());
-                mapChannelsToListener.put(channel.getAbsolutePath(), listMap.get(position));
-                tempListIps.remove(tempListIps.indexOf(position));
+                mapChannelsToListener.put(channel.getAbsolutePath(), ipAddress);
+                if (tempListIps.contains(ipAddress)) {
+                    tempListIps.remove(tempListIps.indexOf(ipAddress));
+                }
                 listChannels.remove(channel);
             }
         }
