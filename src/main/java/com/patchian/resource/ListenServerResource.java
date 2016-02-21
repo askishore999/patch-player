@@ -20,6 +20,7 @@ import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 
 import com.patchian.util.ExecuteShellCommand;
+import com.patchian.util.RunnablePlayMusic;
 
 public class ListenServerResource extends ServerResource {
 
@@ -47,6 +48,8 @@ public class ListenServerResource extends ServerResource {
         // String path = String.format(TMP_PART_FILE);
         // player.play(path);
         // }
+
+        System.out.println("Sending out Success");
         JSONObject resp = new JSONObject();
         resp.put("success", true);
         System.out.println(resp.toString());
@@ -122,7 +125,9 @@ public class ListenServerResource extends ServerResource {
         String tmpPartFile = String.format(TMP_PART_FILE, audioChannel);
         executer.executeCommand("sudo chmod 777 " + tmpPartFile);
         System.out.println("test2");
-        executer.executeCommand("vlc " + tmpPartFile + " --play-and-exit");
+        RunnablePlayMusic music = new RunnablePlayMusic(executer, tmpPartFile);
+        music.start();
+        // executer.executeCommand("vlc " + tmpPartFile + " --play-and-exit");
         System.out.println("test3");
     }
 }
