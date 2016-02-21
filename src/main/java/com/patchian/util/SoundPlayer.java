@@ -1,41 +1,40 @@
 package com.patchian.util;
 
 import static javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED;
-import static javax.sound.sampled.AudioSystem.getAudioInputStream;
 
-import java.io.File;
 import java.io.IOException;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine.Info;
-import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.UnsupportedAudioFileException;
+
+import uk.co.caprica.vlcj.component.AudioMediaPlayerComponent;
+import uk.co.caprica.vlcj.medialist.MediaList;
+import uk.co.caprica.vlcj.player.MediaPlayerFactory;
+import uk.co.caprica.vlcj.player.list.MediaListPlayer;
 
 public class SoundPlayer {
+
+    public SoundPlayer() {
+        System.out.println("test2");
+    }
+
     public void play(String filePath) {
-        File file = new File(filePath);
-        try (final AudioInputStream in = getAudioInputStream(file)) {
+        MediaPlayerFactory factory = new MediaPlayerFactory();
+        // AudioMediaPlayerComponent mediaPlayerComponent = new
+        // AudioMediaPlayerComponent();
+        System.out.println("test3");
+        MediaList playlist = factory.newMediaList();
+        System.out.println("test4");
+        playlist.addMedia(filePath);
+        System.out.println("test5");
 
-            final AudioFormat outFormat = getOutFormat(in.getFormat());
-            final Info info = new Info(SourceDataLine.class, outFormat);
-
-            try (final SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info)) {
-
-                if (line != null) {
-                    line.open(outFormat);
-                    line.start();
-                    stream(getAudioInputStream(outFormat, in), line);
-                    line.drain();
-                    line.stop();
-                }
-            }
-
-        } catch (UnsupportedAudioFileException | LineUnavailableException | IOException e) {
-            throw new IllegalStateException(e);
-        }
+        MediaListPlayer mLp = factory.newMediaListPlayer();
+        System.out.println("test6");
+        mLp.setMediaList(playlist);
+        System.out.println("test7");
+        mLp.play();
+        System.out.println("test8");
     }
 
     private AudioFormat getOutFormat(AudioFormat inFormat) {

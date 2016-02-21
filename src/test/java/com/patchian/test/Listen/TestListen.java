@@ -9,7 +9,7 @@ import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.restlet.data.MediaType;
 import org.restlet.ext.fileupload.RestletFileUpload;
@@ -20,27 +20,66 @@ import org.restlet.representation.Representation;
 import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.ClientResource;
 
+import com.patchian.util.ExecuteShellCommand;
 import com.patchian.util.SoundPlayer;
 
 public class TestListen {
-    private static final String TMP_PART_FILE = "/tmp/side_left.wav";
+    private static final String TMP_PART_FILE = "/home/skishore/5chn.mp4";
+    private static final String LISTEN_URL = "http://%s:8080/patch-player-0.0.1-SNAPSHOT/listen";
+    private static final String AUDIO_PATH = "/tmp/%s_%s";
 
-    @Test
-    public void testListenResource() {
-        System.out.println("Into Post CALL");
-        File file = new File("/tmp/side_left.wav");
-        FileRepresentation fileEntity = new FileRepresentation(file, MediaType.MULTIPART_FORM_DATA);
-        ClientResource client = new ClientResource("http://localhost:8080/patch-player-0.0.1-SNAPSHOT/listen");
-        FormDataSet form = new FormDataSet();
-        FormData fd = new FormData("upload_file", fileEntity);
-        form.getEntries().add(fd);
-        form.setMultipart(true);
-        client.post(form, MediaType.MULTIPART_FORM_DATA);
-        System.out.println(client.toString());
-        JSONObject resp = new JSONObject();
-        resp.put("success", true);
-    }
+    // @Ignore
+    // @Test
+    // public void testListenResource() {
+    // System.out.println("Into Post CALL");
+    // System.out.println("HostServerResource Post");
+    // String audioPath = "/tmp/5chn.mp4";
+    // String audioName = "5chn";
+    //
+    // // Splitting Part Goes Here.
+    // IFFMpeg ffMpeg = new FFMpegCMD(audioPath);
+    // String outputDir = ffMpeg.split();
+    //
+    // File outputFolder = new File(outputDir);
+    // // Matching Part Goes Here.
+    // Matcher matcher = new Matcher();
+    // Set<String> listRequests = new HashSet<String>();
+    // listRequests.add("127.0.0.1");
+    // Map<String, String> mapListnerToChannel = matcher.match(listRequests,
+    // outputFolder.listFiles());
+    //
+    // // File Transfer Happens here.
+    // for (String listenerClient : listRequests) {
+    //
+    // String url = String.format(LISTEN_URL, listenerClient);
+    // ClientResource client = new ClientResource(url);
+    // System.out.println("CLIENT:" + client.toString());
+    //
+    // File file = new File(mapListnerToChannel.get(listenerClient));
+    //
+    // FileRepresentation fileEntity = new FileRepresentation(file,
+    // MediaType.MULTIPART_FORM_DATA);
+    //
+    // FormDataSet formDataSet = new FormDataSet();
+    //
+    // FormData fData = new FormData("upload_file", fileEntity);
+    //
+    // FormData fAudioName = new FormData("audio_name", audioName);
+    // FormData fAudioChannel = new FormData("audio_channel",
+    // mapListnerToChannel.get(listenerClient));
+    //
+    // formDataSet.getEntries().add(fData);
+    // formDataSet.getEntries().add(fAudioName);
+    // formDataSet.getEntries().add(fAudioChannel);
+    // formDataSet.setMultipart(true);
+    //
+    // Representation result = client.post(formDataSet,
+    // MediaType.MULTIPART_FORM_DATA);
+    // System.out.println("RESPONSE:" + result);
+    // }
+    // }
 
+    @Ignore
     @Test
     public void testListenResource2() throws FileUploadException, IOException {
 
@@ -103,9 +142,10 @@ public class TestListen {
         }
     }
 
+    @Ignore
     @Test
     public void testPlay() {
-        SoundPlayer player = new SoundPlayer();
-        player.play(TMP_PART_FILE);
+        ExecuteShellCommand executer = new ExecuteShellCommand();
+        executer.executeCommand("vlc " + TMP_PART_FILE);
     }
 }

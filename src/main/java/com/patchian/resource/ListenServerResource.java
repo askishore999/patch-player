@@ -19,11 +19,12 @@ import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 
+import com.patchian.util.ExecuteShellCommand;
 import com.patchian.util.SoundPlayer;
 
 public class ListenServerResource extends ServerResource {
 
-    private static final String TMP_PART_FILE = "/tmp/%s_%s";
+    private static final String TMP_PART_FILE = "/tmp/current.mp3";
 
     /**
      * @return
@@ -31,19 +32,25 @@ public class ListenServerResource extends ServerResource {
     @Get
     public Representation doGet() {
         System.out.println("LISTENSERVERRESOURCE GET");
-        Form requestParams = getRequest().getResourceRef().getQueryAsForm();
-        String audioName = requestParams.getValues("audio_name");
-        String audioChannel = requestParams.getValues("audio_channel");
-        String strAudioDelay = requestParams.getValues("audio_delay");
-        long audioDelay = 0;
-        if (strAudioDelay != null) {
-            audioDelay = Long.parseLong(strAudioDelay);
-        }
-        if (audioName != null && !audioName.isEmpty()) {
-            SoundPlayer player = new SoundPlayer();
-            String path = String.format(TMP_PART_FILE, audioName, audioChannel);
-            player.play(path);
-        }
+
+        ExecuteShellCommand executer = new ExecuteShellCommand();
+        executer.executeCommand("sudo chmod 777 " + TMP_PART_FILE);
+
+        executer.executeCommand("vlc " + TMP_PART_FILE + " --play-and-exit");
+
+        // Form requestParams = getRequest().getResourceRef().getQueryAsForm();
+        // String audioName = requestParams.getValues("audio_name");
+        // String audioChannel = requestParams.getValues("audio_channel");
+        // String strAudioDelay = requestParams.getValues("audio_delay");
+        // long audioDelay = 0;
+        // if (strAudioDelay != null) {
+        // audioDelay = Long.parseLong(strAudioDelay);
+        // }
+        // if (audioName != null && !audioName.isEmpty()) {
+        // SoundPlayer player = new SoundPlayer();
+        // String path = String.format(TMP_PART_FILE);
+        // player.play(path);
+        // }
         JSONObject resp = new JSONObject();
         resp.put("success", true);
         System.out.println(resp.toString());
@@ -82,29 +89,19 @@ public class ListenServerResource extends ServerResource {
                 String audioChannel = "";
                 while (fileIterator.hasNext() && !found) {
                     FileItemStream fi = fileIterator.next();
+                    System.out.println(fi.getFieldName());
                     if (fi.getFieldName().equals("upload_file")) {
                         found = true;
-                        finput = fi;
+                        InputStream is = fi.openStream();
+                        String path = String.format(TMP_PART_FILE);
+                        OutputStream outstream = new FileOutputStream(new File(path));
+                        byte[] buffer = new byte[4096];
+                        int len;
+                        while ((len = is.read(buffer)) > 0) {
+                            outstream.write(buffer, 0, len);
+                        }
+                        outstream.close();
                     }
-                    if (fi.getFieldName().equals("audio_fileName")) {
-                        audioName = fi.toString();
-                    }
-                    if (fi.getFieldName().equals("audio_channel")) {
-                        found = true;
-                        audioChannel = fi.toString();
-                    }
-
-                }
-                if (found && finput != null) {
-                    InputStream is = finput.openStream();
-                    String path = String.format(TMP_PART_FILE, audioName, audioChannel);
-                    OutputStream outstream = new FileOutputStream(new File(path));
-                    byte[] buffer = new byte[4096];
-                    int len;
-                    while ((len = is.read(buffer)) > 0) {
-                        outstream.write(buffer, 0, len);
-                    }
-                    outstream.close();
                 }
             } else {
                 setStatus(Status.CLIENT_ERROR_BAD_REQUEST);

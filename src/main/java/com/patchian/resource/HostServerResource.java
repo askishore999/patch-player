@@ -23,15 +23,14 @@ import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 
-import com.patchian.util.IFFMpeg;
-import com.patchian.util.IMatcher;
+import com.patchian.util.FFMpegCMD;
+import com.patchian.util.Matcher;
 import com.patchian.util.RunnablePlay;
 
 public class HostServerResource extends ServerResource {
 
     private static final String LISTEN_URL = "http://%s:8080/patch-player-0.0.1-SNAPSHOT/listen";
-    private static final String AUDIO_PATH = "/tmp/%s_%s";
-    public Set<String> listRequests = new HashSet<String>();
+    public static Set<String> listRequests = new HashSet<String>();
     public int channels;
     public Map<String, String> mapListnerToChannel = new HashMap<String, String>();
 
@@ -53,22 +52,24 @@ public class HostServerResource extends ServerResource {
         String audioName = form.getValues("audio_name");
 
         // Splitting Part Goes Here.
-        IFFMpeg ffMpeg = null;
-        ffMpeg.split(audioPath);
+        FFMpegCMD ffMpeg = new FFMpegCMD(audioPath);
+        String outputDir = ffMpeg.split();
 
+        File outputFolder = new File(outputDir);
         // Matching Part Goes Here.
-        IMatcher matcher = null;
-        mapListnerToChannel = matcher.match(listRequests);
+        Matcher matcher = new Matcher();
+        System.out.println(outputFolder.list()[0]);
+        System.out.println(listRequests.toString());
+        Map<String, String> mapListnerToChannel = matcher.match(listRequests, outputFolder.listFiles());
 
         // File Transfer Happens here.
         for (String listenerClient : listRequests) {
 
             String url = String.format(LISTEN_URL, listenerClient);
-            ClientResource client = new ClientResource(LISTEN_URL);
+            ClientResource client = new ClientResource(url);
             System.out.println("CLIENT:" + client.toString());
 
-            String path = String.format(AUDIO_PATH, audioName, mapListnerToChannel.get(listenerClient));
-            File file = new File(path);
+            File file = new File(mapListnerToChannel.get(listenerClient));
 
             FileRepresentation fileEntity = new FileRepresentation(file, MediaType.MULTIPART_FORM_DATA);
 
@@ -78,7 +79,6 @@ public class HostServerResource extends ServerResource {
 
             FormData fAudioName = new FormData("audio_name", audioName);
             FormData fAudioChannel = new FormData("audio_channel", mapListnerToChannel.get(listenerClient));
-
             formDataSet.getEntries().add(fData);
             formDataSet.getEntries().add(fAudioName);
             formDataSet.getEntries().add(fAudioChannel);
@@ -94,7 +94,7 @@ public class HostServerResource extends ServerResource {
         for (String listenerClient : listRequests) {
 
             String url = String.format(LISTEN_URL, listenerClient);
-            ClientResource client = new ClientResource(LISTEN_URL);
+            ClientResource client = new ClientResource(url);
             client.setQueryValue("audio_name", audioName);
             client.setQueryValue("audio_channel", mapListnerToChannel.get(listenerClient));
             client.setQueryValue("audio_delay", "0");
