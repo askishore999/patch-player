@@ -20,11 +20,10 @@ import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 
 import com.patchian.util.ExecuteShellCommand;
-import com.patchian.util.SoundPlayer;
 
 public class ListenServerResource extends ServerResource {
 
-    private static final String TMP_PART_FILE = "/tmp/current.mp3";
+    private static final String TMP_PART_FILE = "/tmp/current_%s.mp3";
 
     /**
      * @return
@@ -33,14 +32,11 @@ public class ListenServerResource extends ServerResource {
     public Representation doGet() {
         System.out.println("LISTENSERVERRESOURCE GET");
 
-        ExecuteShellCommand executer = new ExecuteShellCommand();
-        executer.executeCommand("sudo chmod 777 " + TMP_PART_FILE);
+        Form requestParams = getRequest().getResourceRef().getQueryAsForm();
+        String audioChannel = requestParams.getValues("audio_channel");
+        System.out.println("------" + audioChannel);
+        playSong(audioChannel);
 
-        executer.executeCommand("vlc " + TMP_PART_FILE + " --play-and-exit");
-
-        // Form requestParams = getRequest().getResourceRef().getQueryAsForm();
-        // String audioName = requestParams.getValues("audio_name");
-        // String audioChannel = requestParams.getValues("audio_channel");
         // String strAudioDelay = requestParams.getValues("audio_delay");
         // long audioDelay = 0;
         // if (strAudioDelay != null) {
@@ -87,13 +83,17 @@ public class ListenServerResource extends ServerResource {
                 FileItemStream finput = null;
                 String audioName = "";
                 String audioChannel = "";
+
+                Form form = getRequest().getResourceRef().getQueryAsForm();
+                audioChannel = form.getValues("audio_channel");
                 while (fileIterator.hasNext() && !found) {
                     FileItemStream fi = fileIterator.next();
                     System.out.println(fi.getFieldName());
+
                     if (fi.getFieldName().equals("upload_file")) {
                         found = true;
                         InputStream is = fi.openStream();
-                        String path = String.format(TMP_PART_FILE);
+                        String path = String.format(TMP_PART_FILE, audioChannel);
                         OutputStream outstream = new FileOutputStream(new File(path));
                         byte[] buffer = new byte[4096];
                         int len;
@@ -102,6 +102,7 @@ public class ListenServerResource extends ServerResource {
                         }
                         outstream.close();
                     }
+                    System.out.println("------" + audioChannel);
                 }
             } else {
                 setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
@@ -113,5 +114,15 @@ public class ListenServerResource extends ServerResource {
         resp.put("success", true);
         System.out.println(resp.toString());
         return new StringRepresentation(resp.toString(), MediaType.APPLICATION_JSON);
+    }
+
+    public void playSong(String audioChannel) {
+        ExecuteShellCommand executer = new ExecuteShellCommand();
+        System.out.println("test1");
+        String tmpPartFile = String.format(TMP_PART_FILE, audioChannel);
+        executer.executeCommand("sudo chmod 777 " + tmpPartFile);
+        System.out.println("test2");
+        executer.executeCommand("vlc " + tmpPartFile + " --play-and-exit");
+        System.out.println("test3");
     }
 }

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.fileupload.FileUploadException;
@@ -12,7 +13,6 @@ import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
-import org.restlet.data.Parameter;
 import org.restlet.ext.html.FormData;
 import org.restlet.ext.html.FormDataSet;
 import org.restlet.representation.FileRepresentation;
@@ -31,6 +31,7 @@ public class HostServerResource extends ServerResource {
 
     private static final String LISTEN_URL = "http://%s:8080/patch-player-0.0.1-SNAPSHOT/listen";
     public static Set<String> listRequests = new HashSet<String>();
+    public static Map<String, String> listMap = new HashMap<String, String>();
     public int channels;
     public Map<String, String> mapListnerToChannel = new HashMap<String, String>();
 
@@ -60,16 +61,17 @@ public class HostServerResource extends ServerResource {
         Matcher matcher = new Matcher();
         System.out.println(outputFolder.list()[0]);
         System.out.println(listRequests.toString());
-        Map<String, String> mapListnerToChannel = matcher.match(listRequests, outputFolder.listFiles());
+        Map<String, String> mapChannleToListener = matcher.match(listRequests, outputFolder.listFiles(), listMap);
 
         // File Transfer Happens here.
-        for (String listenerClient : listRequests) {
+        for (Entry<String, String> listenerChannelClient : mapChannleToListener.entrySet()) {
 
+            String listenerClient = listenerChannelClient.getValue();
             String url = String.format(LISTEN_URL, listenerClient);
             ClientResource client = new ClientResource(url);
             System.out.println("CLIENT:" + client.toString());
 
-            File file = new File(mapListnerToChannel.get(listenerClient));
+            File file = new File(listenerChannelClient.getKey());
 
             FileRepresentation fileEntity = new FileRepresentation(file, MediaType.MULTIPART_FORM_DATA);
 
@@ -78,28 +80,33 @@ public class HostServerResource extends ServerResource {
             FormData fData = new FormData("upload_file", fileEntity);
 
             FormData fAudioName = new FormData("audio_name", audioName);
-            FormData fAudioChannel = new FormData("audio_channel", mapListnerToChannel.get(listenerClient));
+
             formDataSet.getEntries().add(fData);
-            formDataSet.getEntries().add(fAudioName);
-            formDataSet.getEntries().add(fAudioChannel);
             formDataSet.setMultipart(true);
 
+            String position =
+                    listenerChannelClient.getKey().substring(listenerChannelClient.getKey().lastIndexOf("_") + 1,
+                            listenerChannelClient.getKey().lastIndexOf(".mp3"));
+
+            client.setQueryValue("audio_channel", position);
             Representation result = client.post(formDataSet, MediaType.MULTIPART_FORM_DATA);
             System.out.println("RESPONSE:" + result);
         }
 
         Thread.sleep(1);
 
+        System.out.println("Mappings:" + mapChannleToListener.toString());
         // Calls the Play Function.
-        for (String listenerClient : listRequests) {
+        for (Entry<String, String> listenerChannelClient : mapChannleToListener.entrySet()) {
 
+            String listenerClient = listenerChannelClient.getValue();
             String url = String.format(LISTEN_URL, listenerClient);
             ClientResource client = new ClientResource(url);
             client.setQueryValue("audio_name", audioName);
-            client.setQueryValue("audio_channel", mapListnerToChannel.get(listenerClient));
+            client.setQueryValue("audio_channel", listenerChannelClient.getKey());
             client.setQueryValue("audio_delay", "0");
             Thread th = new Thread(new RunnablePlay(client));
-            th.run();
+            th.start();
         }
         JSONObject resp = new JSONObject();
         resp.put("success", true);
@@ -115,18 +122,16 @@ public class HostServerResource extends ServerResource {
     public Representation doGet() {
         System.out.println("HOSTSERVERRESOURCE GET");
         String ipAddress = getRequest().getClientInfo().getAddress();
+        Form form = getRequest().getResourceRef().getQueryAsForm();
+        String position = form.getValues("position");
         listRequests.add(ipAddress);
+        if (position != null) {
+            listMap.put(position, ipAddress);
+            System.out.println("prioritizing: " + position + " to: " + ipAddress);
+        }
         JSONObject resp = new JSONObject();
         resp.put("success", true);
         return new StringRepresentation(resp.toString(), MediaType.APPLICATION_JSON);
-    }
-
-    public static Map<String, String> getMapFromParam(Form form) {
-        Map<String, String> map = new HashMap<String, String>();
-        for (Parameter parameter : form) {
-            map.put(parameter.getName(), parameter.getValue());
-        }
-        return map;
     }
 
 }

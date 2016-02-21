@@ -20,11 +20,12 @@ import org.restlet.representation.Representation;
 import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.ClientResource;
 
+import com.patchian.resource.ListenServerResource;
 import com.patchian.util.ExecuteShellCommand;
 import com.patchian.util.SoundPlayer;
 
 public class TestListen {
-    private static final String TMP_PART_FILE = "/home/skishore/5chn.mp4";
+    private static final String TMP_PART_FILE = "/tmp/current.mp3";
     private static final String LISTEN_URL = "http://%s:8080/patch-player-0.0.1-SNAPSHOT/listen";
     private static final String AUDIO_PATH = "/tmp/%s_%s";
 
@@ -145,7 +146,7 @@ public class TestListen {
     @Ignore
     @Test
     public void testPlay() {
-        ExecuteShellCommand executer = new ExecuteShellCommand();
-        executer.executeCommand("vlc " + TMP_PART_FILE);
+        ListenServerResource n = new ListenServerResource();
+        n.playSong("");
     }
 }

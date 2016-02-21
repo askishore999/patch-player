@@ -2,7 +2,7 @@ package com.patchian.util;
 
 import org.restlet.resource.ClientResource;
 
-public class RunnablePlay implements Runnable {
+public class RunnablePlay extends Thread {
 
     private ClientResource client;
 
